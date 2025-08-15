@@ -1,0 +1,9 @@
+{
+  "body": "{\"type\":\"event_callback\",\"event_id\":\"test-123\",\"event\":{\"type\":\"app_mention\",\"channel\":\"C123\",\"thread_ts\":\"123.456\",\"ts\":\"123.457\",\"text\":\"<@U123> test\"}}",
+  "headers": {
+    "X-Slack-Signature": "v0=dummy",
+    "X-Slack-Request-Timestamp": "9999999999"
+  },
+  "httpMethod": "POST",
+  "path": "/slack/events"
+}

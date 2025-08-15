@@ -1,0 +1,15 @@
+{
+  "action": "process_mention",
+  "event": {
+    "type": "event_callback",
+    "event_id": "test-event-456",
+    "event": {
+      "type": "app_mention",
+      "channel": "C123456",
+      "thread_ts": "1234567890.123456",
+      "ts": "1234567890.123459",
+      "text": "<@UBOT123> can you summarize what <@U8PT8HSQ3> and <@U7XY9ABC> discussed?",
+      "user": "U789012"
+    }
+  }
+}

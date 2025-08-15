@@ -1,0 +1,145 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+gradle-app.setting
+.gradletasknamecache
+
+# IDE
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+bin/
+
+# AWS SAM
+.aws-sam/
+samconfig.toml
+.sam/
+
+# AWS
+.aws/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Python (for SAM CLI)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+
+# Testing
+coverage/
+.nyc_output/
+*.lcov
+test-results/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+tmp/
+temp/
+
+# Build outputs
+dist/
+target/
+*.zip
+*.tar
+*.tar.gz
+*.jar
+*.war
+*.ear
+
+# Secrets and credentials
+*.pem
+*.key
+*.crt
+*.p12
+secrets.yml
+secrets.yaml
+credentials.json
+*-credentials.json
+
+# Lambda packages
+function.zip
+lambda-deployment-package.zip
+
+# Native build artifacts
+build.gradle.native
+build-native.sh
+build-native-docker.sh
+build-lambda-custom.sh
+Dockerfile.native
+Makefile.native
+bootstrap
+template-native.yaml
+build-native.log
+
+# Local test events (keep the events directory but not sensitive data)
+events/*-local.json
+events/*-prod.json
+events/*-secret.json
+
+# Documentation build
+docs/_build/
+docs/.jekyll-cache/
+
+# Terraform (if used)
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+terraform.tfvars
+
+# CDK (if used)
+cdk.out/
+cdk.context.json
+
+# Node (if frontend added)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Lombok
+lombok.config
+
+# Application properties with secrets
+application-*.properties
+!application.properties
+!application-test.properties
+
+# Slack manifest with secrets
+slack-manifest-*.yaml
+!slack-manifest.yaml

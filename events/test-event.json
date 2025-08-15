@@ -1,0 +1,9 @@
+{
+  "body": "{\"type\":\"url_verification\",\"challenge\":\"test-challenge-123\"}",
+  "headers": {
+    "X-Slack-Signature": "v0=test",
+    "X-Slack-Request-Timestamp": "1234567890"
+  },
+  "httpMethod": "POST",
+  "path": "/slack/events"
+}

@@ -1,0 +1,91 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Slack AI Assistant Lambda Function
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: java21
+    Architectures:
+      - arm64
+    Environment:
+      Variables:
+        LOG_LEVEL: INFO
+
+Parameters:
+  SlackSigningSecret:
+    Type: String
+    NoEcho: true
+    Description: Slack app signing secret for request verification
+  
+  SlackBotToken:
+    Type: String
+    NoEcho: true
+    Description: Slack bot user OAuth token
+
+Resources:
+  SlackBotFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: java21
+      BuildProperties:
+        GradleProjectDirectory: .
+    Properties:
+      CodeUri: .
+      Handler: org.bvnk.slackbot.handler.SlackEventHandler::handleRequest
+      Environment:
+        Variables:
+          SLACK_SIGNING_SECRET: !Ref SlackSigningSecret
+          SLACK_BOT_TOKEN: !Ref SlackBotToken
+          DYNAMO_TABLE: !Ref DeduplicationTable
+          BEDROCK_MODEL_ID: eu.anthropic.claude-sonnet-4-20250514-v1:0
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DeduplicationTable
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - lambda:InvokeFunction
+                - lambda:InvokeAsync
+              Resource: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}-SlackBotFunction-*'
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+                - bedrock:InvokeModelWithResponseStream
+              Resource: '*'
+      Events:
+        SlackEvents:
+          Type: Api
+          Properties:
+            Path: /slack/events
+            Method: POST
+
+  DeduplicationTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: slack-event-deduplication
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: event_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: event_id
+          KeyType: HASH
+      TimeToLiveSpecification:
+        Enabled: true
+        AttributeName: ttl
+
+Outputs:
+  SlackWebhookUrl:
+    Description: URL for Slack Event Subscriptions
+    Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/slack/events'
+  
+  FunctionArn:
+    Description: Slack Bot Lambda Function ARN
+    Value: !GetAtt SlackBotFunction.Arn
+  
+  DynamoTableName:
+    Description: DynamoDB Table for event deduplication
+    Value: !Ref DeduplicationTable
