@@ -1,6 +1,8 @@
 plugins {
     id 'java'
     id 'application'
+    id 'org.graalvm.buildtools.native' version '0.11.0'
+    id 'com.diffplug.spotless' version '7.2.1'
 }
 
 group = 'org.bvnk.slackbot'
@@ -17,35 +19,37 @@ repositories {
 
 dependencies {
     // AWS Lambda Runtime
-    implementation 'com.amazonaws:aws-lambda-java-core:1.2.3'
-    implementation 'com.amazonaws:aws-lambda-java-events:3.11.5'
-    implementation 'com.amazonaws:aws-lambda-java-runtime-interface-client:2.4.2'
+    implementation 'com.formkiq:lambda-runtime-graalvm:2.6.0'
+    compileOnly 'org.graalvm.nativeimage:svm:21.0.0.2'
+    implementation 'com.amazonaws:aws-lambda-java-core:1.3.0'
+    implementation 'com.amazonaws:aws-lambda-java-events:3.16.1'
+    implementation 'com.amazonaws:aws-lambda-java-runtime-interface-client:2.8.3'
     
     // AWS SDK v2
-    implementation platform('software.amazon.awssdk:bom:2.25.0')
+    implementation platform('software.amazon.awssdk:bom:2.32.25')
     implementation 'software.amazon.awssdk:dynamodb'
     implementation 'software.amazon.awssdk:lambda'
     implementation 'software.amazon.awssdk:bedrockruntime'
     
     // Slack API
-    implementation 'com.slack.api:slack-api-client:1.39.0'
+    implementation 'com.slack.api:slack-api-client:1.45.3'
     
     // JSON Processing
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.0'
-    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.17.0'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.19.2'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.19.2'
     
     // Lombok
-    compileOnly 'org.projectlombok:lombok:1.18.32'
-    annotationProcessor 'org.projectlombok:lombok:1.18.32'
+    compileOnly 'org.projectlombok:lombok:1.18.38'
+    annotationProcessor 'org.projectlombok:lombok:1.18.38'
     
     // Logging
-    implementation 'org.slf4j:slf4j-api:2.0.12'
-    implementation 'org.slf4j:slf4j-simple:2.0.12'
+    implementation 'org.slf4j:slf4j-api:2.0.17'
+    implementation 'org.slf4j:slf4j-simple:2.0.17'
     
     // Testing
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
-    testImplementation 'org.mockito:mockito-core:5.11.0'
-    testImplementation 'org.mockito:mockito-junit-jupiter:5.11.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.13.4'
+    testImplementation 'org.mockito:mockito-core:5.19.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.19.0'
 }
 
 application {
@@ -66,3 +70,22 @@ task buildZip(type: Zip) {
 }
 
 build.dependsOn buildZip
+
+graalvmNative {
+    binaries {
+        main {
+            mainClass = 'com.formkiq.lambda.runtime.graalvm.LambdaRuntime'
+            buildArgs(["--features=org.bvnk.slackbot.config.NativeFeature", "--enable-url-protocols=https,http"])
+        }
+    }
+}
+
+spotless {
+    java {
+        googleJavaFormat()
+        importOrder()
+        removeUnusedImports()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}

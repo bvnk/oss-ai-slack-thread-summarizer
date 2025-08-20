@@ -8,7 +8,7 @@ deploy-no-confirm: build
 	sam deploy --no-confirm-changeset
 
 logs:
-	sam logs -n SlackEventFunction --stack-name slack-ai-assistant --tail
+	sam logs -n SlackBotFunctionNative --stack-name slack-ai-assistant --tail
 
 test:
 	./gradlew test
@@ -16,5 +16,9 @@ test:
 clean:
 	./gradlew clean
 	rm -rf .aws-sam
+
+build-SlackBotFunctionNative:
+	./build-native.sh
+	cp ./build/native/slack-ai-assistant $(ARTIFACTS_DIR)/bootstrap
 
 .PHONY: build deploy deploy-no-confirm logs test clean

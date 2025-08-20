@@ -6,9 +6,6 @@ Globals:
   Function:
     Timeout: 30
     MemorySize: 512
-    Runtime: java21
-    Architectures:
-      - arm64
     Environment:
       Variables:
         LOG_LEVEL: INFO
@@ -25,15 +22,25 @@ Parameters:
     Description: Slack bot user OAuth token
 
 Resources:
-  SlackBotFunction:
+  SlackBotFunctionNative:
     Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: java21
-      BuildProperties:
-        GradleProjectDirectory: .
     Properties:
-      CodeUri: .
-      Handler: org.bvnk.slackbot.handler.SlackEventHandler::handleRequest
+      PackageType: Zip
+      # The handler is the name of your executable file. 'bootstrap' is the standard.
+      Handler: org.bvnk.slackbot.handler.SlackEventHandler
+      # Use a 'provided' runtime for custom binaries.
+      Runtime: provided.al2023
+      Architectures:
+        - x86_64
+      CodeUri: . # Points to the root of your project or where the build artifact is located
+      MemorySize: 256
+      Timeout: 15
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /native/slack/events
+            Method: POST
       Environment:
         Variables:
           SLACK_SIGNING_SECRET: !Ref SlackSigningSecret
@@ -49,19 +56,15 @@ Resources:
               Action:
                 - lambda:InvokeFunction
                 - lambda:InvokeAsync
-              Resource: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}-SlackBotFunction-*'
+              Resource: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}-SlackBotFunctionNative-*'
             - Effect: Allow
               Action:
                 - bedrock:InvokeModel
                 - bedrock:InvokeModelWithResponseStream
               Resource: '*'
-      Events:
-        SlackEvents:
-          Type: Api
-          Properties:
-            Path: /slack/events
-            Method: POST
-
+    Metadata:
+      # This tells 'sam build' how to build your function
+      BuildMethod: makefile
   DeduplicationTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -78,10 +81,9 @@ Resources:
         AttributeName: ttl
 
 Outputs:
-  SlackWebhookUrl:
+  SlackWebhookUrlNative:
     Description: URL for Slack Event Subscriptions
-    Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/slack/events'
-  
+    Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/native/slack/events'
   FunctionArn:
     Description: Slack Bot Lambda Function ARN
     Value: !GetAtt SlackBotFunction.Arn
