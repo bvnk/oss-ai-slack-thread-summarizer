@@ -1,11 +1,11 @@
 build:
 	sam build
 
-deploy: build
-	sam deploy --guided
+deploy:
+	./deploy.sh
 
-deploy-no-confirm: build
-	sam deploy --no-confirm-changeset
+deploy-no-confirm:
+	./deploy.sh --yes
 
 logs:
 	sam logs -n SlackBotFunctionNative --stack-name slack-ai-assistant --tail

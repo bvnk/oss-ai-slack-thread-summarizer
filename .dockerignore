@@ -1,0 +1,15 @@
+# Keep the build context small. NB: .gradle-dist is deliberately NOT ignored —
+# the Dockerfile copies the vendored Gradle distribution from it.
+.git
+.gradle
+.aws-sam
+.serena
+.idea
+.vscode
+build
+bin
+out
+events
+*.log
+.env
+.DS_Store

@@ -17,7 +17,6 @@ import software.amazon.awssdk.services.bedrockruntime.model.InvokeModelResponse;
 public class BedrockService {
   private static final Logger logger = LoggerFactory.getLogger(BedrockService.class);
   private static final int MAX_TOKENS = 1000;
-  private static final double TEMPERATURE = 0.7;
   private static final int SLACK_MESSAGE_CHAR_LIMIT = 3000; // Slack's message character limit
 
   private final BedrockRuntimeClient bedrockClient;
@@ -41,7 +40,12 @@ public class BedrockService {
       ObjectNode requestBody = objectMapper.createObjectNode();
       requestBody.put("anthropic_version", "bedrock-2023-05-31");
       requestBody.put("max_tokens", MAX_TOKENS);
-      requestBody.put("temperature", TEMPERATURE);
+
+      // Claude Sonnet 5 rejects `temperature` ("`temperature` is deprecated for this model") and
+      // enables adaptive thinking by default. Left on, reasoning would consume the whole MAX_TOKENS
+      // budget and the reply would come back as a thinking block with no text. Thread summaries
+      // don't need reasoning, so keep it off and spend the budget on the answer.
+      requestBody.putObject("thinking").put("type", "disabled");
 
       // Build messages array
       requestBody.putArray("messages").addObject().put("role", "user").put("content", prompt);
@@ -71,19 +75,48 @@ public class BedrockService {
       Map<String, Object> responseMap = objectMapper.readValue(responseBody, Map.class);
 
       // Extract the content from Claude's response
-      Object content = responseMap.get("content");
-      if (content instanceof List && !((List<?>) content).isEmpty()) {
-        Map<String, Object> firstContent = (Map<String, Object>) ((List<?>) content).get(0);
-        String rawResponse = (String) firstContent.get("text");
-        return formatResponseForSlack(rawResponse);
+      String stopReason = (String) responseMap.get("stop_reason");
+      String rawResponse = extractText(responseMap);
+
+      if (rawResponse == null) {
+        logger.warn("Bedrock returned no text content (stop_reason={})", stopReason);
+        return "I couldn't generate a response. Please try again.";
       }
 
-      return "I couldn't generate a response. Please try again.";
+      if ("max_tokens".equals(stopReason)) {
+        logger.warn("Bedrock response was cut off at the max_tokens limit of {}", MAX_TOKENS);
+      }
+
+      return formatResponseForSlack(rawResponse);
 
     } catch (Exception e) {
       logger.error("Error getting response from Bedrock", e);
       return "I encountered an error while processing your request. Please try again later.";
     }
+  }
+
+  /**
+   * Joins every {@code text} block in Claude's content array. The array can also hold non-text
+   * blocks such as {@code thinking}, so the first element is not necessarily the answer. Returns
+   * null when the response carries no text at all.
+   */
+  private String extractText(Map<String, Object> responseMap) {
+    Object content = responseMap.get("content");
+    if (!(content instanceof List)) {
+      return null;
+    }
+
+    StringBuilder text = new StringBuilder();
+    for (Object block : (List<?>) content) {
+      if (block instanceof Map && "text".equals(((Map<?, ?>) block).get("type"))) {
+        Object blockText = ((Map<?, ?>) block).get("text");
+        if (blockText instanceof String) {
+          text.append((String) blockText);
+        }
+      }
+    }
+
+    return text.isEmpty() ? null : text.toString();
   }
 
   private String buildPrompt(String threadContext, String userQuestion) {

@@ -18,15 +18,21 @@ make build
 
 ### Deploy
 ```bash
-# Deploy with SAM (guided)
-make deploy
+# Build and deploy (shows the changeset before applying)
+./deploy.sh
 
 # Deploy without confirmation
-make deploy-no-confirm
+./deploy.sh --yes
 
-# Direct SAM deployment
-sam deploy --guided
+# Equivalent Make targets
+make deploy
+make deploy-no-confirm
 ```
+
+`deploy.sh` resolves the two NoEcho Slack secrets — CloudFormation will not
+return them on an update, so they must be supplied on every deploy. It takes
+them from the environment, then `.env`, then the deployed Lambda's own
+configuration. Nothing secret is stored in the repo.
 
 ### Testing
 ```bash
@@ -71,7 +77,10 @@ This is a serverless Slack bot that uses AWS Lambda to process Slack events and 
 - **LambdaInvokeService**: Handles async Lambda invocations
 
 ### Infrastructure (SAM)
-- Lambda function with Java 21 runtime on ARM64
+- Lambda function on the `provided.al2023` runtime, x86_64, running a GraalVM
+  native-image binary (`bootstrap`). `sam build` shells out to `build-native.sh`,
+  which compiles inside Docker — the binary links against the build image's
+  glibc, so it cannot be produced on a macOS host directly.
 - DynamoDB table for event deduplication with TTL
 - API Gateway for webhook endpoint
 - IAM policies for Bedrock, DynamoDB, and Lambda invocations
@@ -81,4 +90,11 @@ Environment variables are managed through SAM template:
 - `SLACK_SIGNING_SECRET`: For request verification
 - `SLACK_BOT_TOKEN`: For Slack API calls
 - `DYNAMO_TABLE`: Deduplication table name
-- `BEDROCK_MODEL_ID`: AI model identifier
+- `BEDROCK_MODEL_ID`: AI model identifier. Uses an EU cross-region inference
+  profile (`eu.anthropic.claude-sonnet-5`); list options with
+  `aws bedrock list-inference-profiles --region eu-west-1`.
+
+Current Claude models reject `temperature` and enable adaptive thinking by
+default. `BedrockService` therefore sends `thinking: {"type": "disabled"}` and no
+sampling parameters, and reads the answer by scanning the content array for
+`text` blocks rather than assuming `content[0]`.
