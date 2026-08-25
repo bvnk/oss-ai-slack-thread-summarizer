@@ -72,20 +72,30 @@ cd tools-slack-ai-assistant
 
 ### 3. Build and Deploy
 
+Requires the AWS SAM CLI (`brew install aws-sam-cli`) and a running Docker
+daemon — the Lambda runs a GraalVM native-image binary, which is compiled inside
+a Linux container matching the function's architecture.
+
 ```bash
 # Build the application
 make build
 
-# Deploy with guided prompts
-make deploy
+# Deploy (shows the changeset before applying)
+./deploy.sh
 
 # Or deploy without confirmation
-make deploy-no-confirm
+./deploy.sh --yes
 ```
 
-During deployment, you'll need to provide:
-- `SlackSigningSecret`: Your Slack app's signing secret
-- `SlackBotToken`: Your Slack bot's OAuth token
+The two Slack secrets are NoEcho CloudFormation parameters, so CloudFormation
+will not return them on an update and they must be supplied on every deploy.
+`deploy.sh` resolves them from, in order: the environment, a gitignored `.env`,
+then the deployed Lambda's own configuration. For a first-time deploy into an
+empty account, provide them yourself:
+
+```bash
+SLACK_SIGNING_SECRET=... SLACK_BOT_TOKEN=... ./deploy.sh
+```
 
 ### 4. Configure Slack Event Subscriptions
 
@@ -167,12 +177,24 @@ The Lambda function uses the following environment variables:
 | `SLACK_SIGNING_SECRET` | Slack app signing secret | Required |
 | `SLACK_BOT_TOKEN` | Slack bot OAuth token | Required |
 | `DYNAMO_TABLE` | DynamoDB table name | Set by SAM |
-| `BEDROCK_MODEL_ID` | Bedrock model identifier | `anthropic.claude-sonnet-4-20250514-v1:0` |
+| `BEDROCK_MODEL_ID` | Bedrock model identifier | `eu.anthropic.claude-sonnet-5` |
 | `LOG_LEVEL` | Logging level | `INFO` |
 
 ### Bedrock Model
 
-The bot uses Claude Sonnet by default. To use a different model, update the `BEDROCK_MODEL_ID` environment variable in `template.yaml`.
+The bot uses the latest Claude Sonnet by default, via the EU cross-region
+inference profile `eu.anthropic.claude-sonnet-5`. To use a different model,
+update `BEDROCK_MODEL_ID` in `template.yaml`. List what your account can reach
+with:
+
+```bash
+aws bedrock list-inference-profiles --region eu-west-1
+```
+
+Note that current Claude models reject the `temperature` parameter and turn
+adaptive thinking on by default, so `BedrockService` sends
+`thinking: {"type": "disabled"}` and no sampling parameters. If you switch to an
+older model, that request body still works.
 
 ## Features
 

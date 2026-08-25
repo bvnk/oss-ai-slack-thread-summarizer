@@ -27,6 +27,9 @@ bin/
 samconfig.toml
 .sam/
 
+# Gradle distribution vendored into the Docker build by build-native.sh
+.gradle-dist/
+
 # AWS
 .aws/
 
@@ -81,6 +84,9 @@ target/
 *.jar
 *.war
 *.ear
+# Must come after *.jar above, otherwise that rule wins and the Gradle wrapper
+# never gets committed — which leaves a fresh clone unable to build.
+!gradle/wrapper/gradle-wrapper.jar
 
 # Secrets and credentials
 *.pem
@@ -97,8 +103,9 @@ function.zip
 lambda-deployment-package.zip
 
 # Native build artifacts
+# NB: build-native.sh is NOT ignored — the Makefile's sam build target calls it,
+# so ignoring it left the repo unbuildable on a fresh clone.
 build.gradle.native
-build-native.sh
 build-native-docker.sh
 build-lambda-custom.sh
 Dockerfile.native

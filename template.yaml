@@ -46,7 +46,9 @@ Resources:
           SLACK_SIGNING_SECRET: !Ref SlackSigningSecret
           SLACK_BOT_TOKEN: !Ref SlackBotToken
           DYNAMO_TABLE: !Ref DeduplicationTable
-          BEDROCK_MODEL_ID: eu.anthropic.claude-sonnet-4-20250514-v1:0
+          # EU cross-region inference profile for the latest Claude Sonnet.
+          # `aws bedrock list-inference-profiles --region eu-west-1` lists what is available.
+          BEDROCK_MODEL_ID: eu.anthropic.claude-sonnet-5
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref DeduplicationTable
@@ -86,7 +88,7 @@ Outputs:
     Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/native/slack/events'
   FunctionArn:
     Description: Slack Bot Lambda Function ARN
-    Value: !GetAtt SlackBotFunction.Arn
+    Value: !GetAtt SlackBotFunctionNative.Arn
   
   DynamoTableName:
     Description: DynamoDB Table for event deduplication

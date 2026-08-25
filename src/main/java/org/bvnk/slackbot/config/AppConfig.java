@@ -18,9 +18,8 @@ public class AppConfig {
     this.slackBotToken = getEnvOrDefault("SLACK_BOT_TOKEN", "");
     this.dynamoTableName = getEnvOrDefault("DYNAMO_TABLE", "slack-event-deduplication");
     this.lambdaFunctionName = getEnvOrDefault("AWS_LAMBDA_FUNCTION_NAME", "");
-    this.bedrockModelId =
-        getEnvOrDefault("BEDROCK_MODEL_ID", "anthropic.claude-3-sonnet-20240229-v1:0");
-    this.awsRegion = getEnvOrDefault("AWS_REGION", "us-east-1");
+    this.bedrockModelId = getEnvOrDefault("BEDROCK_MODEL_ID", "eu.anthropic.claude-sonnet-5");
+    this.awsRegion = getEnvOrDefault("AWS_REGION", "eu-west-1");
   }
 
   public static AppConfig getInstance() {
